@@ -1,5 +1,9 @@
 # PARALORE — Rebuild Society After Work
 
+Live app: https://paralore.sha-i.com
+
+Public source: https://github.com/shalynmonet/paralore
+
 A working fictional policy laboratory built with Builder.io Agent-Native 0.226.0, React, TypeScript and Tailwind. Four views share one persistent SQL-backed world: World Dashboard, Policy Lab, AI Assembly and Citizen View. Numerical outcomes come from explicit deterministic rules.
 
 ## Run locally on Windows
@@ -41,4 +45,5 @@ node node_modules/@agent-native/core/bin/agent-native.js doctor
 
 11 automated tests passed, including exact trajectory, preview purity, household finances, clamping, reset, stale/duplicate/superseded proposals and real native-dispatch approval enforcement. Typecheck and doctor passed. Browser smoke verified baseline, previews, cancellation, Assembly, amended proposals, approval dialog, enactment, incremental upgrades, household budgets and five-year advancement. See ACCEPTANCE.md for reference values and DEMO.md for recording guidance.
 
-Not published or submitted. A live model connection, hosting, public Clips recording and hackathon submission remain separate steps. Deadline supplied: November 9, 2026, 11:59 PM Pacific / November 10, 1:59 AM Central.
+Published on Vercel with a Neon free-plan PostgreSQL database. The custom domain is verified. Live model connection, a public Clips recording and hackathon submission remain separate steps. Vercel could not connect its GitHub integration to the repository; deploy updates explicitly with `vercel deploy --prod --yes` until repository access is configured. Deadline supplied: November 9, 2026, 11:59 PM Pacific / November 10, 1:59 AM Central.
+

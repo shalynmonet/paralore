@@ -49,3 +49,4 @@ PROJECT-STATUS.md
 agent-native-e70.zip
 .vercel
 .env*
+!.env.example

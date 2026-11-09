@@ -1,10 +1,10 @@
 {
-  "name": "App",
-  "short_name": "App",
-  "description": "Agent-Native app starter ready to customize",
+  "name": "Paralore",
+  "short_name": "Paralore",
+  "description": "Rebuild society after work. An agent-native policy laboratory.",
   "start_url": "./",
-  "background_color": "#111111",
-  "theme_color": "#18181B",
+  "background_color": "#101719",
+  "theme_color": "#101719",
   "icons": [
     {
       "src": "icon-192.svg",

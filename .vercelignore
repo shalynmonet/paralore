@@ -1,0 +1,15 @@
+.git
+node_modules
+.agent-native
+.generated
+.react-router
+data
+.env*
+*.zip
+preview.jpg
+PROJECT-STATUS.md
+build
+dist
+.output
+.netlify
+.vercel
