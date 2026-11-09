@@ -16,6 +16,7 @@ import {
   householdFinances,
   type HouseholdFinances,
   type HouseholdId,
+  type HouseholdDefinition,
 } from "./households";
 
 export const FORECAST_YEARS = 5;
@@ -41,10 +42,7 @@ export interface PolicyEvaluation {
     indicators: Indicators;
     fiscalStrainedAtEnd: boolean;
   };
-  households: Record<
-    HouseholdId,
-    { before: HouseholdFinances; after: HouseholdFinances }
-  >;
+  households: Record<HouseholdId, { before: HouseholdFinances; after: HouseholdFinances }> & Record<string, { before: HouseholdFinances; after: HouseholdFinances }>;
   assumptions: string[];
   tradeoffs: string[];
 }
@@ -61,6 +59,7 @@ export function evaluatePolicyChange(
   world: EngineWorld,
   policyId: PolicyId,
   toLevel: number,
+  profiles: HouseholdDefinition[] = [],
 ): PolicyEvaluation {
   const fromLevel = world.levels[policyId];
   const before = world.indicators;
@@ -78,6 +77,12 @@ export function evaluatePolicyChange(
     households[householdId] = {
       before: householdFinances(householdId, world.levels),
       after: householdFinances(householdId, nextLevels),
+    };
+  }
+  for (const profile of profiles) {
+    households[profile.id] = {
+      before: householdFinances(profile.id, world.levels, profile),
+      after: householdFinances(profile.id, nextLevels, profile),
     };
   }
 

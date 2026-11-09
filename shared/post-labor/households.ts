@@ -4,7 +4,7 @@ export const HOUSEHOLD_IDS = ["chen", "rivera"] as const;
 export type HouseholdId = (typeof HOUSEHOLD_IDS)[number];
 
 export interface HouseholdDefinition {
-  id: HouseholdId;
+  id: string;
   name: string;
   composition: string;
   residents: number;
@@ -50,7 +50,8 @@ export function workweekCapFor(level: number): number {
 }
 
 export interface HouseholdFinances {
-  householdId: HouseholdId;
+  householdId: string;
+  householdName: string;
   residents: number;
   baselineEarnedIncome: number;
   earnedIncome: number;
@@ -68,10 +69,12 @@ export interface HouseholdFinances {
 }
 
 export function householdFinances(
-  householdId: HouseholdId,
+  householdId: string,
   levels: PolicyLevels,
+  profile?: HouseholdDefinition,
 ): HouseholdFinances {
-  const household = HOUSEHOLDS[householdId];
+  const household = profile ?? (Object.prototype.hasOwnProperty.call(HOUSEHOLDS, householdId) ? HOUSEHOLDS[householdId as HouseholdId] : undefined);
+  if (!household) throw new Error("Unknown household profile.");
   const ubiMonthly = household.residents * UBI_PER_RESIDENT_PER_LEVEL * levels.ubi;
   const ownershipDividendMonthly =
     household.residents * DIVIDEND_PER_RESIDENT_PER_LEVEL * levels.ownership;
@@ -85,12 +88,13 @@ export function householdFinances(
   const workweekCap = workweekCapFor(levels.workweek);
   const paidHours = Math.min(household.baselineHours, workweekCap);
   const earnedIncome =
-    (household.baselineEarnedIncome * paidHours) / household.baselineHours;
+    household.baselineHours > 0 ? (household.baselineEarnedIncome * paidHours) / household.baselineHours : 0;
   const disposableBalance =
     earnedIncome + ubiMonthly + ownershipDividendMonthly - adjustedCosts;
 
   return {
     householdId,
+    householdName: household.name,
     residents: household.residents,
     baselineEarnedIncome: household.baselineEarnedIncome,
     earnedIncome,
@@ -108,16 +112,18 @@ export function householdFinances(
   };
 }
 
-export function noPolicyFinances(householdId: HouseholdId): HouseholdFinances {
-  return householdFinances(householdId, NO_POLICY_LEVELS);
+export function noPolicyFinances(householdId: string, profile?: HouseholdDefinition): HouseholdFinances {
+  return householdFinances(householdId, NO_POLICY_LEVELS, profile);
 }
 
 export function householdNarrative(
-  householdId: HouseholdId,
+  householdId: string,
   levels: PolicyLevels,
+  profile?: HouseholdDefinition,
 ): string[] {
-  const finances = householdFinances(householdId, levels);
-  const household = HOUSEHOLDS[householdId];
+  const finances = householdFinances(householdId, levels, profile);
+  const household = profile ?? (Object.prototype.hasOwnProperty.call(HOUSEHOLDS, householdId) ? HOUSEHOLDS[householdId as HouseholdId] : undefined);
+  if (!household) throw new Error("Unknown household profile.");
   const lines: string[] = [];
 
   if (levels.ubi > 0) {

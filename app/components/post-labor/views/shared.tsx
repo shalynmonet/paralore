@@ -82,6 +82,7 @@ export interface EvaluationData {
 }
 
 interface HouseholdSnapshot {
+  householdName?: string;
   disposableBalance: number;
   earnedIncome: number;
   paidHours: number;
@@ -97,9 +98,11 @@ export function EvaluationPanel({ data }: { data: EvaluationData }) {
     <div className="space-y-6">
       {stale ? (
         <Notice tone="error">
-          This proposal was made before the world last changed. Its figures are recalculated against the current world and it cannot be enacted. Propose the policy again.
+          The world changed since this preview. These are the original projected effects. Refresh the proposal against the current world before enacting it.
         </Notice>
       ) : null}
+      {proposal.status === "enacted" ? <Notice tone="success">Policy enacted. These are its original before-and-after effects, preserved for your decision record.</Notice> : null}
+      {proposal.status === "superseded" ? <Notice tone="info">A newer proposal replaced this one. Its original effects remain here for comparison.</Notice> : null}
       <Panel className="p-5 md:p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -148,13 +151,12 @@ export function EvaluationPanel({ data }: { data: EvaluationData }) {
         <Panel className="p-5 md:p-6">
           <Eyebrow>Household impacts</Eyebrow>
           <div className="mt-3 space-y-4">
-            {HOUSEHOLD_IDS.map((id) => {
-              const pair = evaluation.households[id];
+            {Object.entries(evaluation.households).map(([id, pair]) => {
               if (!pair) return null;
               const change = pair.after.disposableBalance - pair.before.disposableBalance;
               return (
                 <div key={id} className="text-sm">
-                  <p className="text-foreground">{HOUSEHOLDS[id].name}</p>
+                  <p className="text-foreground">{pair.after.householdName ?? id}</p>
                   <p className="tabular-nums text-muted-foreground">
                     Disposable balance {formatMoney(pair.before.disposableBalance)} to{" "}
                     <span className="text-foreground">{formatMoney(pair.after.disposableBalance)}</span>{" "}

@@ -12,8 +12,8 @@ export default defineAction({
   schema: z.object({}),
   needsApproval: true,
   run: async (_args, ctx) => {
-    const world = await replaceWorld((previousRevision) =>
-      resetOp(previousRevision, operationContext(ctx?.caller)),
+    const world = await replaceWorld((previousRevision, previousWorld) =>
+      resetOp(previousRevision, operationContext(ctx?.caller), previousWorld?.households ?? []),
     );
     return { simulationId: world.simulationId, revision: world.revision, year: world.year };
   },

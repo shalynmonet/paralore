@@ -11,13 +11,17 @@ import {
 } from "../../../shared/post-labor/engine";
 import { evaluatePolicyChange, type PolicyEvaluation } from "../../../shared/post-labor/evaluate";
 import { convenePerspectives } from "../../../shared/post-labor/assembly";
+import { worldAtRevision } from "../../../shared/post-labor/history";
 import {
   householdFinances,
   householdNarrative,
   noPolicyFinances,
   type HouseholdFinances,
   type HouseholdId,
+  HOUSEHOLDS,
+  type HouseholdDefinition,
 } from "../../../shared/post-labor/households";
+import { HouseholdInputSchema, type HouseholdInput, type HouseholdProfile } from "../../../shared/post-labor/profiles";
 import {
   createBaselineWorld,
   type Assembly,
@@ -109,7 +113,7 @@ export function proposePolicyOp(
   const proposals: Proposal[] = world.proposals.map((item) =>
     item.status === "open" ? { ...item, status: "superseded" } : item,
   );
-  const evaluation = evaluatePolicyChange(world, input.policyId, input.level);
+  const evaluation = evaluatePolicyChange(world, input.policyId, input.level, householdDefinitions(world));
   const summary = `Proposed ${POLICIES[input.policyId].name} at ${levelLabel(input.policyId, input.level)}`;
   return {
     world: {
@@ -124,11 +128,12 @@ export function proposePolicyOp(
 
 export function evaluatePolicyOp(world: WorldState, proposalId: string) {
   const proposal = findProposal(world, proposalId);
-  const evaluation = evaluatePolicyChange(world, proposal.policyId, proposal.level);
+  const originalWorld = worldAtRevision(world, proposal.worldRevision);
+  const evaluation = evaluatePolicyChange(originalWorld, proposal.policyId, proposal.level, householdDefinitions(world));
   return {
     proposal,
     evaluation,
-    stale: proposal.worldRevision !== world.revision,
+    stale: proposal.status === "open" && proposal.worldRevision !== world.revision,
   };
 }
 
@@ -295,10 +300,11 @@ export function advanceYearsOp(
   };
 }
 
-export function resetOp(previousRevision: number, ctx: OperationContext): WorldState {
+export function resetOp(previousRevision: number, ctx: OperationContext, households: HouseholdProfile[] = []): WorldState {
   const fresh = createBaselineWorld(ctx.newId(), previousRevision + 1);
   return {
     ...fresh,
+    households,
     actionLog: [
       {
         id: ctx.newId(),
@@ -312,7 +318,8 @@ export function resetOp(previousRevision: number, ctx: OperationContext): WorldS
 }
 
 export interface HouseholdInspection {
-  householdId: HouseholdId;
+  householdId: string;
+  profile: HouseholdDefinition;
   baseline: HouseholdFinances;
   current: HouseholdFinances;
   withProposal: HouseholdFinances | null;
@@ -322,23 +329,50 @@ export interface HouseholdInspection {
 
 export function inspectHouseholdOp(
   world: WorldState,
-  householdId: HouseholdId,
+  householdId: string,
   proposalId: string | undefined,
 ): HouseholdInspection {
+  const profile = householdDefinitions(world).find(item => item.id === householdId) ?? (Object.prototype.hasOwnProperty.call(HOUSEHOLDS, householdId) ? HOUSEHOLDS[householdId as HouseholdId] : undefined);
+  if (!profile) fail("That household no longer exists. Select another profile.", { errorCode: "household_not_found", statusCode: 404 });
   let withProposal: HouseholdFinances | null = null;
   let proposalNarrative: string[] = [];
   if (proposalId) {
     const proposal = findProposal(world, proposalId);
     const levels = { ...world.levels, [proposal.policyId]: proposal.level };
-    withProposal = householdFinances(householdId, levels);
-    proposalNarrative = householdNarrative(householdId, levels);
+    withProposal = householdFinances(householdId, levels, profile);
+    proposalNarrative = householdNarrative(householdId, levels, profile);
   }
   return {
     householdId,
-    baseline: noPolicyFinances(householdId),
-    current: householdFinances(householdId, world.levels),
+    profile,
+    baseline: noPolicyFinances(householdId, profile),
+    current: householdFinances(householdId, world.levels, profile),
     withProposal,
-    narrative: householdNarrative(householdId, world.levels),
+    narrative: householdNarrative(householdId, world.levels, profile),
     proposalNarrative,
   };
+}
+
+export function householdDefinitions(world: WorldState): HouseholdDefinition[] {
+  return world.households.map(profile => ({ ...profile, composition: `${profile.residents} resident${profile.residents === 1 ? "" : "s"}` }));
+}
+
+export function manageHouseholdOp(world: WorldState, input: { operation: "save"; id?: string | undefined; profile: HouseholdInput } | { operation: "delete"; id: string }, ctx: OperationContext) {
+  const existing = "id" in input && input.id ? world.households.find(item => item.id === input.id) : undefined;
+  if (input.id && !existing) fail("That saved household was not found. Refresh your profiles.", { errorCode: "household_not_found", statusCode: 404 });
+  if (input.operation === "delete") {
+    const households = world.households.filter(item => item.id !== input.id);
+    return { world: { ...world, households, actionLog: withLog(world, ctx, "manage-household", "Deleted a saved household profile") }, id: input.id };
+  }
+  if (!existing && world.households.length >= 20) fail("You can save up to 20 household profiles. Edit or remove one first.", { errorCode: "household_limit", statusCode: 409 });
+  const profile = { ...HouseholdInputSchema.parse(input.profile), id: existing?.id ?? `custom-${ctx.newId()}` };
+  const households = existing ? world.households.map(item => item.id === existing.id ? profile : item) : [...world.households, profile];
+  return { world: { ...world, households, actionLog: withLog(world, ctx, "manage-household", existing ? "Updated a saved household profile" : "Created a saved household profile") }, id: profile.id };
+}
+
+export function advanceToYearOp(world: WorldState, targetYear: number, expectedRevision: number, ctx: OperationContext) {
+  if (expectedRevision !== world.revision) fail("The world changed. Review the current year and try again.", { errorCode: "stale_revision", statusCode: 409 });
+  const years = targetYear - world.year;
+  if (!Number.isInteger(targetYear) || years < 1 || years > 50) fail(`Choose a year from ${world.year + 1} to ${world.year + 50}. Inspect earlier years in history, or reset to begin again.`, { errorCode: "invalid_year", statusCode: 400 });
+  return { ...advanceYearsOp(world, years, ctx), years };
 }

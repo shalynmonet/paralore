@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { HouseholdProfileSchema } from "./profiles";
 
 import {
   BASE_YEAR,
@@ -111,6 +112,7 @@ export const WorldStateSchema = z.object({
   timeline: z.array(TimelineEntrySchema),
   decisions: z.array(DecisionSchema),
   actionLog: z.array(ActionLogSchema),
+  households: z.array(HouseholdProfileSchema).max(20).default([]),
 });
 
 export type Proposal = z.infer<typeof ProposalSchema>;
@@ -147,6 +149,7 @@ export function createBaselineWorld(simulationId: string, revision = 0): WorldSt
     ],
     decisions: [],
     actionLog: [],
+    households: [],
   };
 }
 

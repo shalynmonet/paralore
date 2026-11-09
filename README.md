@@ -31,7 +31,7 @@ The exported source supplied the domain engine, actions, store and UI primitives
 
 ## Agent and model status
 
-The native agent runtime and all eight domain actions are wired into the framework. A live model provider must be connected in the native agent setup to run conversational interpretation; no API key is included. Use the framework's own setup UI and enter credentials there, never into source or chat. The Assembly is deliberately labeled deterministic role-based analysis and is usable without a live model. Native tool-dispatch approval tests do not require a paid model.
+The native agent runtime and all ten domain actions are wired into the framework. A live model provider must be connected in the native agent setup to run conversational interpretation; no API key is included. Use the framework's own setup UI and enter credentials there, never into source or chat. The Assembly is deliberately labeled deterministic role-based analysis and is usable without a live model. Native tool-dispatch approval tests do not require a paid model.
 
 Signed-in identities receive separate world rows. Identity-free local development uses one local world. This is not an anonymous multiuser production service. Before hosting, configure production authentication and persistent PostgreSQL, run migrations and test the deployed approval flow. Local PGlite data and secrets are excluded from source exports.
 
@@ -43,7 +43,11 @@ node node_modules/@agent-native/core/bin/agent-native.js typecheck
 node node_modules/@agent-native/core/bin/agent-native.js doctor
 ```
 
-11 automated tests passed, including exact trajectory, preview purity, household finances, clamping, reset, stale/duplicate/superseded proposals and real native-dispatch approval enforcement. Typecheck and doctor passed. Browser smoke verified baseline, previews, cancellation, Assembly, amended proposals, approval dialog, enactment, incremental upgrades, household budgets and five-year advancement. See ACCEPTANCE.md for reference values and DEMO.md for recording guidance.
+14 automated tests passed, including exact trajectory, preview purity, household finances, clamping, reset, stale/duplicate/superseded proposals and real native-dispatch approval enforcement. Typecheck and doctor passed. Browser smoke verified baseline, previews, cancellation, Assembly, amended proposals, approval dialog, enactment, incremental upgrades, household budgets and five-year advancement. See ACCEPTANCE.md for reference values and DEMO.md for recording guidance.
 
 Published on Vercel with a Neon free-plan PostgreSQL database. The custom domain is verified. Live model connection, a public Clips recording and hackathon submission remain separate steps. Vercel could not connect its GitHub integration to the repository; deploy updates explicitly with `vercel deploy --prod --yes` until repository access is configured. Deadline supplied: November 9, 2026, 11:59 PM Pacific / November 10, 1:59 AM Central.
 
+
+### Year controls and household profiles
+
+The dashboard can simulate to a chosen year (up to 50 years per operation), calculating every intermediate year. Saved history is read-only. Citizen view supports up to 20 private custom households, editable income, costs, residents and paid hours. Profiles survive reset and appear in policy previews. Assembly compares the original proposal with delegate alternatives from the same starting world. Enacted proposals retain their original national consequences rather than being recalculated against their own effects. Login keeps each account’s world and profiles separate.

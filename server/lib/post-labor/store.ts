@@ -113,12 +113,14 @@ export async function mutateWorld<T>(
 }
 
 export async function replaceWorld(
-  build: (previousRevision: number) => WorldState,
+  build: (previousRevision: number, previousWorld?: WorldState) => WorldState,
 ): Promise<WorldState> {
   return getDb().transaction(async (tx) => {
     await insertBaselineIfMissing(tx);
     const raw = await lockWorldRow(tx);
-    const next = build(storedRevision(raw));
+    let previous: WorldState | undefined;
+    try { const result = validateWorld(JSON.parse(raw)); if (result.ok) previous = result.world; } catch { /* Reset also recovers corrupt state. */ }
+    const next = build(storedRevision(raw), previous);
     await saveWorld(tx, next);
     return next;
   });

@@ -3,7 +3,7 @@ import { BASELINE_INDICATORS, NO_POLICY_LEVELS, applyPolicyChange, annualStep, a
 import { householdFinances } from "./households";
 import { evaluatePolicyChange } from "./evaluate";
 import { createBaselineWorld, validateWorld } from "./state";
-import { proposePolicyOp, enactPolicyOp, advanceYearsOp, resetOp, convenePerspectivesOp } from "../../server/lib/post-labor/operations";
+import { proposePolicyOp, enactPolicyOp, advanceYearsOp, resetOp, convenePerspectivesOp, evaluatePolicyOp, advanceToYearOp, manageHouseholdOp, inspectHouseholdOp } from "../../server/lib/post-labor/operations";
 
 let sequence = 0;
 const context = { caller: "frontend", newId: () => `test-${++sequence}` };
@@ -85,5 +85,54 @@ describe("PARALORE deterministic contract", () => {
     expect(result.world.decisions).toHaveLength(0);
     expect(validateWorld(JSON.parse(JSON.stringify(result.world))).ok).toBe(true);
     expect(validateWorld({ ...result.world, indicators: { security: NaN } }).ok).toBe(false);
+  });
+});
+
+
+describe("proposal history and user controls", () => {
+  it("preserves original consequences after enactment and later years", () => {
+    const first = ownership();
+    const enacted = enactPolicyOp(first.world, { proposalId: first.proposal.id, expectedRevision: 0 }, context).world;
+    for (const world of [enacted, advanceYearsOp(enacted, 5, context).world]) {
+      const result = evaluatePolicyOp(world, first.proposal.id);
+      expect(result.stale).toBe(false);
+      expect(result.evaluation).toEqual(first.evaluation);
+      expect(result.evaluation.fromLevel).toBe(0);
+      expect(result.evaluation.deltas.ownership).toBe(20);
+    }
+    const changed = advanceYearsOp(first.world, 1, context).world;
+    expect(evaluatePolicyOp(changed, first.proposal.id).stale).toBe(true);
+    expect(evaluatePolicyOp(changed, first.proposal.id).evaluation).toEqual(first.evaluation);
+  });
+  it("simulates a selected year through every intermediate annual step", () => {
+    const world = baseline();
+    const selected = advanceToYearOp(world, 2050, world.revision, context);
+    expect(selected.world.year).toBe(2050);
+    expect(selected.world.timeline).toHaveLength(11);
+    expect(selected.world.indicators).toEqual(advanceYearsOp(world, 10, context).world.indicators);
+    for (const year of [2039, 2040, 2041.5, 2091]) expect(() => advanceToYearOp(world, year, 0, context)).toThrow();
+    expect(() => advanceToYearOp(world, 2045, 99, context)).toThrow();
+  });
+  it("saves, edits, inspects and removes a household without changing policy state", () => {
+    const original = baseline();
+    const profile = { name: "Test household", residents: 2, baselineEarnedIncome: 2400, baselineCosts: 3000, baselineHours: 40, context: "Fictional" };
+    const created = manageHouseholdOp(original, { operation: "save", profile }, context);
+    expect(created.world.indicators).toEqual(original.indicators);
+    expect(created.world.revision).toBe(original.revision);
+    const world = { ...created.world, levels: { ...original.levels, ubi: 1, ownership: 2, services: 1 } };
+    expect(inspectHouseholdOp(world, created.id, undefined).current.disposableBalance).toBe(800);
+    const edited = manageHouseholdOp(world, { operation: "save", id: created.id, profile: { ...profile, name: "Updated" } }, context);
+    expect(edited.world.households).toHaveLength(1);
+    expect(edited.world.households[0]!.name).toBe("Updated");
+    expect(resetOp(world.revision, context, world.households).households).toEqual(world.households);
+    expect(manageHouseholdOp(world, { operation: "delete", id: created.id }, context).world.households).toEqual([]);
+    expect(() => manageHouseholdOp(world, { operation: "delete", id: "chen" }, context)).toThrow();
+    expect(() => manageHouseholdOp(original, { operation: "save", profile: { ...profile, baselineHours: 0 } }, context)).toThrow();
+    const zero = manageHouseholdOp(original, { operation: "save", profile: { ...profile, baselineHours: 0, baselineEarnedIncome: 0 } }, context);
+    expect(inspectHouseholdOp(zero.world, zero.id, undefined).current.earnedIncome).toBe(0);
+    const legacy = { ...original } as Record<string, unknown>; delete legacy.households;
+    const validated = validateWorld(legacy);
+    expect(validated.ok).toBe(true);
+    if (validated.ok) expect(validated.world.households).toEqual([]);
   });
 });
