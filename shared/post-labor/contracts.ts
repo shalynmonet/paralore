@@ -1,0 +1,15 @@
+import { z } from "zod";
+import { IndicatorsSchema, ProposalSchema, AssemblySchema, DecisionSchema, WorldStateSchema } from "./state";
+import { POLICY_IDS } from "./engine";
+import { HOUSEHOLD_IDS } from "./households";
+export const HouseholdFinancesSchema = z.object({ householdId: z.enum(HOUSEHOLD_IDS), residents: z.number(), baselineEarnedIncome: z.number(), earnedIncome: z.number(), ubiMonthly: z.number(), ownershipDividendMonthly: z.number(), baselineCosts: z.number(), servicesReductionPercent: z.number(), servicesSavingsMonthly: z.number(), adjustedCosts: z.number(), disposableBalance: z.number(), baselineHours: z.number(), workweekCap: z.number(), paidHours: z.number(), weeklyHoursFreed: z.number() });
+const pair = z.object({ before: HouseholdFinancesSchema, after: HouseholdFinancesSchema });
+export const EvaluationSchema = z.object({ policyId: z.enum(POLICY_IDS), policyName: z.string(), fromLevel: z.number(), toLevel: z.number(), fromLabel: z.string(), toLabel: z.string(), before: IndicatorsSchema, after: IndicatorsSchema, deltas: IndicatorsSchema.extend({ security: z.number(), inequality: z.number(), trust: z.number(), stability: z.number(), ownership: z.number(), fiscal: z.number() }), fiscal: z.object({ before: z.number(), after: z.number(), strainThreshold: z.number(), strainedAfterChange: z.boolean() }), forecast: z.object({ years: z.number(), indicators: IndicatorsSchema, fiscalStrainedAtEnd: z.boolean() }), households: z.object({ chen: pair, rivera: pair }), assumptions: z.array(z.string()), tradeoffs: z.array(z.string()) });
+export const WorldOutputSchema = WorldStateSchema.extend({ scenario: z.enum(["fiscal-strain", "fragile-transition", "building-resilience"]), scenarioLabel: z.string() });
+export const ProposalOutputSchema = z.object({ proposal: ProposalSchema, evaluation: EvaluationSchema });
+export const EvaluateOutputSchema = ProposalOutputSchema.extend({ stale: z.boolean() });
+export const AssemblyOutputSchema = z.object({ assembly: AssemblySchema, reused: z.boolean() });
+export const EnactOutputSchema = z.object({ decision: DecisionSchema, before: IndicatorsSchema, after: IndicatorsSchema, revision: z.number() });
+export const AdvanceOutputSchema = z.object({ years: z.number(), path: z.array(z.object({ year: z.number(), indicators: IndicatorsSchema })), year: z.number(), revision: z.number() });
+export const ResetOutputSchema = z.object({ simulationId: z.string(), revision: z.number(), year: z.number() });
+export const InspectOutputSchema = z.object({ householdId: z.enum(HOUSEHOLD_IDS), baseline: HouseholdFinancesSchema, current: HouseholdFinancesSchema, withProposal: HouseholdFinancesSchema.nullable(), narrative: z.array(z.string()), proposalNarrative: z.array(z.string()) });
