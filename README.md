@@ -51,3 +51,5 @@ Published on Vercel with a Neon free-plan PostgreSQL database. The custom domain
 ### Year controls and household profiles
 
 The dashboard can simulate to a chosen year (up to 50 years per operation), calculating every intermediate year. Saved history is read-only. Citizen view supports up to 20 private custom households, editable income, costs, residents and paid hours. Profiles survive reset and appear in policy previews. Assembly compares the original proposal with delegate alternatives from the same starting world. Enacted proposals retain their original national consequences rather than being recalculated against their own effects. Login keeps each account’s world and profiles separate.
+
+Population and AI job replacement are editable through update-scenario, defaulting to 10,000,000 and 75%. They are scenario context and do not affect normalized formulas. reset-simulation accepts startYear from 2027 onward (default 2040), using the same illustrative baseline rather than historical estimates. Earlier horizon years open a restart confirmation. Profiles survive reset; scenario inputs return to defaults.

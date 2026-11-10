@@ -300,8 +300,8 @@ export function advanceYearsOp(
   };
 }
 
-export function resetOp(previousRevision: number, ctx: OperationContext, households: HouseholdProfile[] = []): WorldState {
-  const fresh = createBaselineWorld(ctx.newId(), previousRevision + 1);
+export function resetOp(previousRevision: number, ctx: OperationContext, households: HouseholdProfile[] = [], startYear = 2040): WorldState {
+  const fresh = createBaselineWorld(ctx.newId(), previousRevision + 1, startYear);
   return {
     ...fresh,
     households,
@@ -311,7 +311,7 @@ export function resetOp(previousRevision: number, ctx: OperationContext, househo
         revision: fresh.revision,
         action: "reset-simulation",
         caller: ctx.caller,
-        summary: "Reset to the 2040 baseline; pending proposals and approvals invalidated",
+        summary: `Reset to the ${startYear} baseline; pending proposals and approvals invalidated`,
       },
     ],
   };

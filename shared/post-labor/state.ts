@@ -100,7 +100,15 @@ export const ActionLogSchema = z.object({
   summary: z.string(),
 });
 
+export const ScenarioInputsSchema = z.object({
+  population: z.number().int().min(1).max(10000000000),
+  jobReplacementPercent: z.number().min(0).max(100),
+});
+export const DEFAULT_SCENARIO_INPUTS = { population: 10000000, jobReplacementPercent: 75 };
+
 export const WorldStateSchema = z.object({
+  population: ScenarioInputsSchema.shape.population.default(10000000),
+  jobReplacementPercent: ScenarioInputsSchema.shape.jobReplacementPercent.default(75),
   schemaVersion: z.literal(SCHEMA_VERSION),
   simulationId: z.string().min(1),
   revision: z.number().int().min(0),
@@ -123,14 +131,15 @@ export type Decision = z.infer<typeof DecisionSchema>;
 export type ActionLogEntry = z.infer<typeof ActionLogSchema>;
 export type WorldState = z.infer<typeof WorldStateSchema>;
 
-export function createBaselineWorld(simulationId: string, revision = 0): WorldState {
+export function createBaselineWorld(simulationId: string, revision = 0, startYear = BASE_YEAR): WorldState {
   const indicators: Indicators = { ...BASELINE_INDICATORS };
   const levels: PolicyLevels = { ...NO_POLICY_LEVELS };
   return {
+    ...DEFAULT_SCENARIO_INPUTS,
     schemaVersion: SCHEMA_VERSION,
     simulationId,
     revision,
-    year: BASE_YEAR,
+    year: startYear,
     indicators,
     levels,
     proposals: [],
@@ -139,10 +148,10 @@ export function createBaselineWorld(simulationId: string, revision = 0): WorldSt
       {
         id: `${simulationId}-baseline`,
         kind: "baseline",
-        year: BASE_YEAR,
+        year: startYear,
         revision,
         indicators: { ...indicators },
-        label: "Baseline 2040",
+        label: `Baseline ${startYear}`,
         policyId: null,
         level: null,
       },

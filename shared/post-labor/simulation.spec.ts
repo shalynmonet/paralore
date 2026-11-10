@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { BASELINE_INDICATORS, NO_POLICY_LEVELS, applyPolicyChange, annualStep, advanceYears } from "./engine";
 import { householdFinances } from "./households";
 import { evaluatePolicyChange } from "./evaluate";
-import { createBaselineWorld, validateWorld } from "./state";
+import { createBaselineWorld, validateWorld, ScenarioInputsSchema } from "./state";
 import { proposePolicyOp, enactPolicyOp, advanceYearsOp, resetOp, convenePerspectivesOp, evaluatePolicyOp, advanceToYearOp, manageHouseholdOp, inspectHouseholdOp } from "../../server/lib/post-labor/operations";
 
 let sequence = 0;
@@ -134,5 +134,33 @@ describe("proposal history and user controls", () => {
     const validated = validateWorld(legacy);
     expect(validated.ok).toBe(true);
     if (validated.ok) expect(validated.world.households).toEqual([]);
+  });
+});
+
+
+describe("scenario inputs and earlier starting years", () => {
+  it("defaults legacy worlds and validates editable scenario context", () => {
+    const world = baseline();
+    expect(world.population).toBe(10000000);
+    expect(world.jobReplacementPercent).toBe(75);
+    const legacy = { ...world } as Record<string, unknown>;
+    delete legacy.population; delete legacy.jobReplacementPercent;
+    const parsed = validateWorld(legacy);
+    expect(parsed.ok).toBe(true);
+    if (parsed.ok) expect(parsed.world.population).toBe(10000000);
+    expect(ScenarioInputsSchema.parse({ population: 1, jobReplacementPercent: 0 })).toEqual({ population: 1, jobReplacementPercent: 0 });
+    for (const input of [{population:0,jobReplacementPercent:75},{population:1.5,jobReplacementPercent:75},{population:100,jobReplacementPercent:101},{population:100,jobReplacementPercent:-1}]) expect(ScenarioInputsSchema.safeParse(input).success).toBe(false);
+  });
+  it("restarts in 2027 and advances from there without inheriting future policies", () => {
+    const first = ownership();
+    const enacted = enactPolicyOp(first.world, { proposalId: first.proposal.id, expectedRevision: 0 }, context).world;
+    const world = resetOp(enacted.revision, context, [], 2027);
+    expect(world.year).toBe(2027);
+    expect(world.timeline[0]!.year).toBe(2027);
+    expect(world.timeline[0]!.label).toBe("Baseline 2027");
+    expect(world.levels).toEqual(NO_POLICY_LEVELS);
+    expect(world.proposals).toEqual([]);
+    expect(world.indicators).toEqual(BASELINE_INDICATORS);
+    expect(advanceToYearOp(world, 2028, world.revision, context).world.year).toBe(2028);
   });
 });
