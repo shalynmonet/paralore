@@ -61,7 +61,7 @@ export function PostLaborShell({ children }: { children: ReactNode }) {
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <div aria-hidden="true" className="h-14 shrink-0 border-b border-border md:h-20" style={{ backgroundImage: "url('/brand/houndstooth-iridescent.png')", backgroundRepeat: "repeat", backgroundSize: "192px 192px", backgroundPosition: "center" }} />
+        <div aria-hidden="true" className="h-14 shrink-0 border-b border-border md:h-20" style={{ backgroundImage: "url('/brand/houndstooth-iridescent.png')", backgroundRepeat: "repeat", backgroundSize: "96px 96px", backgroundPosition: "center" }} />
         <div className="border-b border-border bg-card/60 px-5 py-2 text-center text-xs text-muted-foreground md:px-10">
           <span className="font-medium text-pl-amber">Commonwealth of Aurora.</span> {DISCLAIMER}
         </div>
