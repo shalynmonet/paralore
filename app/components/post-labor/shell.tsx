@@ -29,13 +29,19 @@ function linkClass(isActive: boolean, compact: boolean) {
   );
 }
 
+function BrandLogo({ compact = false }: { compact?: boolean }) {
+  return <NavLink to="/" aria-label="Paralore home" className={cn("block overflow-hidden rounded-md bg-[#faf6eb] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring", compact ? "h-16 w-52" : "h-24 w-full")}>
+    <img src="/brand/paralore-logo.jpg" alt="PARALORE" width={2752} height={1536} className="h-full w-full scale-[1.22] object-cover object-center" fetchPriority="high" />
+  </NavLink>;
+}
+
 export function PostLaborShell({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-full bg-background text-foreground">
       <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col justify-between border-r border-border px-5 py-8 md:flex">
         <div>
-          <p className="font-pl-display text-2xl leading-tight tracking-tight">PARALORE</p>
-          <p className="mt-1 text-xs uppercase tracking-[0.18em] text-muted-foreground">
+          <BrandLogo />
+          <p className="mt-4 text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
             Rebuild Society After Work
           </p>
           <nav aria-label="Views" className="mt-10 flex flex-col gap-1">
@@ -55,11 +61,12 @@ export function PostLaborShell({ children }: { children: ReactNode }) {
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
+        <div aria-hidden="true" className="h-14 shrink-0 border-b border-border md:h-20" style={{ backgroundImage: "url('/brand/houndstooth-iridescent.png')", backgroundRepeat: "repeat", backgroundSize: "192px 192px", backgroundPosition: "center" }} />
         <div className="border-b border-border bg-card/60 px-5 py-2 text-center text-xs text-muted-foreground md:px-10">
           <span className="font-medium text-pl-amber">Commonwealth of Aurora.</span> {DISCLAIMER}
         </div>
         <header className="flex items-center justify-between border-b border-border px-5 py-4 md:hidden">
-          <p className="font-pl-display text-xl tracking-tight">PARALORE</p>
+          <BrandLogo compact />
         </header>
         <main className="mx-auto w-full max-w-6xl flex-1 px-5 pb-28 pt-8 md:px-10 md:pb-16 md:pt-12">
           {children}

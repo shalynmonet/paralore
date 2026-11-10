@@ -9,6 +9,6 @@ export default defineAppConfig({
     // Keep the template's authenticated entry explicit after renaming the app.
     homePath: "/",
     // Optional: use your own absolute HTTPS logo URL in transactional emails.
-    // logoUrl: "https://example.com/logo.png",
+    logoUrl: "https://paralore.sha-i.com/brand/paralore-logo.jpg",
   },
 });
